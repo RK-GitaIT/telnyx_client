@@ -1,0 +1,97 @@
+.dial-pad-container {
+  width: 100%;
+  max-width: 320px;
+  margin: auto;
+  padding: 15px;
+  border-radius: 10px;
+  background-color: #f0f4f8;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.profile-section,
+.phone-number-section {
+  margin-bottom: 15px;
+}
+
+select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.dial-display {
+  font-size: 1.5rem;
+  padding: 12px;
+  border: 2px solid #ccc;
+  margin: 15px 0;
+  border-radius: 8px;
+  background: white;
+}
+
+.dial-pad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.dial-pad-grid button {
+  padding: 15px;
+  font-size: 1.25rem;
+  border-radius: 50%;
+  border: none;
+  background-color: #08548A;
+  color: white;
+  cursor: pointer;
+}
+
+.dial-actions button {
+  padding: 8px 16px;
+  margin: 8px;
+  border-radius: 16px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.call-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.hangup-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.call-status.connected p {
+  color: green;
+}
+
+.call-status.in-call p {
+  color: orange;
+}
+
+@media (max-width: 600px) {
+  .dial-pad-grid button {
+    padding: 12px;
+  }
+  .dial-display {
+    font-size: 1.25rem;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-animation {
+  animation: fadeInScale 0.3s ease-out;
+}

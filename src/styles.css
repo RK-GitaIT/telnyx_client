@@ -1,1 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
+html, body {
+    display: block;
+    zoom: 100%;              /* Scales the entire app to 67% */
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+  }
+  

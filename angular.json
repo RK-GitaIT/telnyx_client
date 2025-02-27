@@ -14,6 +14,7 @@
           "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/telnyx_dashboard",
+            "baseHref": "/telnyxweb/",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -21,9 +22,12 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
+             "src/assets",
+             "src/assets/env.js",
               {
-                "glob": "**/*",
-                "input": "public"
+               "glob": "**/*",
+               "input": "public",
+               "output": "/public"
               }
             ],
             "styles": [
@@ -79,11 +83,14 @@
             ],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
-              {
+              "src/assets",
+              "src/assets/env.js",
+               {
                 "glob": "**/*",
-                "input": "public"
-              }
-            ],
+                "input": "public",
+                "output": "/public"
+               }
+             ],
             "styles": [
               "src/styles.css"
             ],
