@@ -1,6 +1,9 @@
 <div class="flex h-screen">
-  <app-sidebar></app-sidebar>
-  <div class="flex-1 p-6">
+  <!-- Sidebar -->
+  <app-sidebar class="flex-shrink-0"></app-sidebar>
+
+  <!-- Main content area -->
+  <div class="flex-1 h-screen overflow-auto p-8 bg-gray-100">
     <router-outlet></router-outlet>
   </div>
 </div>
