@@ -11,5 +11,5 @@ export const routes: Routes = [
   { path: 'ivr', component: IvrcallComponent },
   { path: 'contacts', component: ContactsComponent },
   { path: 'settings', component: SettingsComponent },
-  { path: '', redirectTo: '/messages', pathMatch: 'full' }
+  { path: '', redirectTo: '/sendmsg', pathMatch: 'full' }
 ];

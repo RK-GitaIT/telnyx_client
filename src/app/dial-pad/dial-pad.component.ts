@@ -62,7 +62,6 @@ export class DialPadComponent {
         if(this.calldiscountstatus.find(a=>a == this.callStatus)){
           this.pauseCallBeep();
           this.closeModal();
-          this.pauseCallBeep();
           this.callbeepSound.pause();
           this.callDuration = "00:00";
         }
@@ -186,6 +185,7 @@ export class DialPadComponent {
     closeModal() {
       this.callbeepSound.play();
       this.isCallStatus = false;
+      this.pauseCallBeep();
     }
 
     pauseCallBeep() {
