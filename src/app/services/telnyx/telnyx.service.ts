@@ -18,7 +18,9 @@ export class TelnyxService {
   private webws = 'wss://gitait.com/telnyx/ws';
   private backendApi = config.apiUrl;
 
-  message: string = '';
+  // Temporary storage for the TTS message for the current call.
+  private currentCallMessage: string = '';
+
   callStatus$ = new BehaviorSubject<CallStatus>({ status: '', type: '' });
 
   constructor(
@@ -36,8 +38,12 @@ export class TelnyxService {
       const profileDetails = await this.callService.getProfilesAssociatedPhonenumbers(connectionId).toPromise();
       if (!profileDetails?.data) throw new Error('Invalid profile details');
 
-      if (!this.websocketService.isConnected()) this.websocketService.connect(this.webws);
-      this.message = message;
+      // Ensure the WebSocket is connected.
+      if (!this.websocketService.isConnected()) {
+        this.websocketService.connect(this.webws);
+      }
+      // Store the TTS message temporarily.
+      this.currentCallMessage = message;
 
       const payload = {
         to: destinationNumber,
@@ -71,13 +77,17 @@ export class TelnyxService {
 
       if (event_type === 'call.answered') {
         this.callStatus$.next({ status: 'Call Answered', type: 'success' });
-        this.playTTS(payload.call_control_id, this.message);
+        // If there is a stored TTS message, play it.
+        if (this.currentCallMessage && this.currentCallMessage.trim() !== '') {
+          this.playTTS(payload.call_control_id, this.currentCallMessage);
+          this.currentCallMessage = '';
+        }
       }
 
       if (event_type === 'call.speak.ended') {
+        this.currentCallMessage = '';
         this.callStatus$.next({ status: 'Call Ended', type: 'error' });
       }
-      this.callStatus$.next({ status: '', type: '' });
     }
   }
 

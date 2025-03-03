@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { TelnyxService } from '../services/telnyx/telnyx.service';
+import { TelnyxService, CallStatus } from '../services/telnyx/telnyx.service';
 import { ProfileService } from '../services/profile.service';
 import { CallService } from '../services/call.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-ivrcall',
@@ -11,7 +12,7 @@ import { CallService } from '../services/call.service';
   templateUrl: './ivrcall.component.html',
   styleUrls: ['./ivrcall.component.css']
 })
-export class IvrcallComponent implements OnInit {
+export class IvrcallComponent implements OnInit, OnDestroy {
   to: string = '+';
   message: string = '';
   from: string = '';
@@ -20,9 +21,9 @@ export class IvrcallComponent implements OnInit {
   balance: number = 0;
   currency: string = 'USD';
   isCallStatus: boolean = false;
-  private timerInterval: any;
   callDuration: string = '00:00';
-  
+  private timerInterval: any;
+
   selectedProfile = {
     id: '',
     profileName: '',
@@ -33,6 +34,7 @@ export class IvrcallComponent implements OnInit {
 
   private callbeepSound = new Audio('assets/callbeep.mp3');
   private beepSound = new Audio('assets/beep.wav');
+  private callStatusSub: Subscription | null = null;
 
   constructor(
     private telnyxservice: TelnyxService,
@@ -40,7 +42,9 @@ export class IvrcallComponent implements OnInit {
     private callService: CallService
   ) {}
 
+
   async ngOnInit() {
+    // Fetch profiles for call control
     this.callService.call_control_applicationsProfiles().subscribe(
       (data: any) => {
         this.profiles = data.data;
@@ -55,31 +59,42 @@ export class IvrcallComponent implements OnInit {
       }
     );
 
-    this.telnyxservice.callStatus$.subscribe(status => {
-      if (status.status === 'Call Answered' && status.type ===  "success") {
+    // Subscribe to call status updates from Telnyx service
+    this.callStatusSub = this.telnyxservice.callStatus$.subscribe((status: CallStatus) => {
+      console.log("Call Status:", status);
+      if (status.status === 'Call Answered' && status.type === 'success') {
         this.isCallStatus = true;
         this.startCallTimer();
         this.showToast(status.status, status.type);
-      }
-    
-      if (status.status && ['Hanging Up','Call Failed', 'TTS Not Sent', 'Call Ended'].includes(status.status)) {
+      } else if (status.status && ['Hanging Up', 'Call Failed', 'TTS Not Sent', 'Call Ended'].includes(status.status)) {
         this.isCallStatus = false;
         this.hangup();
         this.showToast(status.status, status.type);
       }
-    
-      console.log("Call Status:", status);
     });
-    
+
+    if (this.callStatusSub) {
+      this.callStatusSub.unsubscribe();
+    }
+    this.closeModal();
+    clearInterval(this.timerInterval);
+  }
+
+  ngOnDestroy() {
+    if (this.callStatusSub) {
+      this.callStatusSub.unsubscribe();
+    }
+    this.closeModal();
+    clearInterval(this.timerInterval);
   }
 
   fetchBalance() {
     this.profileService.getProfileBalance().subscribe(
-      (data) => {
+      (data: any) => {
         this.balance = parseFloat(data.data.balance);
         this.currency = data.data.currency;
       },
-      (error) => console.error('Error fetching balance', error)
+      (error: any) => console.error('Error fetching balance', error)
     );
   }
 
@@ -91,7 +106,7 @@ export class IvrcallComponent implements OnInit {
         this.selectedProfile.profileName = selected.connection_name;
         this.selectedProfile.username = selected.user_name;
         this.selectedProfile.password = selected.password;
-        const response = await this.callService.getProfilesAssociatedPhonenumbers(this.selectedProfile.id).toPromise();
+        const response: any = await this.callService.getProfilesAssociatedPhonenumbers(this.selectedProfile.id).toPromise();
         this.phoneNumbers = response?.data || [];
         this.from = this.phoneNumbers.length > 0 ? this.phoneNumbers[0].phone_number : '';
       }
@@ -101,7 +116,7 @@ export class IvrcallComponent implements OnInit {
   }
 
   showToast(message: string, type: 'info' | 'success' | 'error' | '') {
-    if(type !== ''){
+    if (type !== '') {
       const toast = document.createElement('div');
       toast.className = `fixed bottom-4 right-4 p-3 rounded-lg shadow-lg text-white ${
         type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
@@ -118,20 +133,20 @@ export class IvrcallComponent implements OnInit {
       return;
     }
     
-      try {
-        this.isCallStatus = true;
-        await this.telnyxservice.makeCall(
-          this.to,
-          this.from,
-          this.selectedProfile.id,
-          this.message
-        );
-        this.fetchBalance();
-      } catch (error) {
-        this.hangup();
-        this.showToast('Error sending voice message', 'error');
-        console.error('Error sending voice message:', error);
-      }
+    try {
+      this.isCallStatus = true;
+      await this.telnyxservice.makeCall(
+        this.to,
+        this.from,
+        this.selectedProfile.id,
+        this.message
+      );
+      this.fetchBalance();
+    } catch (error) {
+      this.hangup();
+      this.showToast('Error sending voice message', 'error');
+      console.error('Error sending voice message:', error);
+    }
   }
 
   validateKey(event: KeyboardEvent) {
@@ -142,7 +157,7 @@ export class IvrcallComponent implements OnInit {
   }
 
   closeModal() {
-    this.callbeepSound.play();
+   //this.callbeepSound.play();
     this.isCallStatus = false;
   }
 
@@ -161,7 +176,7 @@ export class IvrcallComponent implements OnInit {
     this.isCallStatus = false;
     clearInterval(this.timerInterval);
     this.callDuration = '00:00';
-    this.beepSound.currentTime = 0;  // Restart sound
+    this.beepSound.currentTime = 0;
     this.callbeepSound.play();
     console.log('Call ended');
     this.closeModal();

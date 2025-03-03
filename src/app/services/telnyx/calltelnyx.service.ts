@@ -1,6 +1,9 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { INotification, ICall, TelnyxRTC } from "@telnyx/webrtc";
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { WebsocketService } from '../websocket/websoket.service';
+import { config } from '../../../config';
 
 interface ExtendedCall extends ICall {
   hangup: () => void;
@@ -15,6 +18,7 @@ export class CalltelnyxService {
   private notificationSubject = new BehaviorSubject<INotification | null>(null);
   notification$ = this.notificationSubject.asObservable();
   log = "";
+  private backendApi = config.apiUrl;
 
   private callStatusSubject = new BehaviorSubject<string>('');
   callStatus$ = this.callStatusSubject.asObservable();
@@ -25,7 +29,12 @@ export class CalltelnyxService {
     login_token: ''
   };
 
-  constructor() {}
+  private websocketUrl = 'https://gitait.com/telnyx/api/webhook';
+  private webws = 'wss://gitait.com/telnyx/ws';
+
+  constructor(private http: HttpClient, private websocketService: WebsocketService) {
+    this.websocketService.message$.subscribe((res: any) => this.handleWebSocketMessage(res));
+  }
 
   setCredentials(login: string, password: string, login_token: string) {
     this.credentials = { login, password, login_token };
@@ -81,8 +90,13 @@ export class CalltelnyxService {
 
   call(destinationNumber: string, callerNumber: string) {
     if (!this.client) return;
+    
+    // Ensure WebSocket connection is active.
+    if (!this.websocketService.isConnected()) {
+      this.websocketService.connect(this.webws);
+    }
 
-    const response =  this.client.newCall({
+    const response = this.client.newCall({
       destinationNumber,
       callerNumber,
       forceRelayCandidate: false,
@@ -103,6 +117,7 @@ export class CalltelnyxService {
   }
 
   private handleNotification(notification: INotification) {
+    console.log(notification);
     if (notification.type === "callUpdate" && notification.call) {
       const call = notification.call as ExtendedCall;
       this.callStatusSubject.next(call.state);
@@ -118,5 +133,38 @@ export class CalltelnyxService {
     this.client.off("telnyx.ready");
     this.client.off("telnyx.notification");
     this.client.off("telnyx.socket.close");
+  }
+
+  async startCallRecording(callControlId: string) {
+    const requestBody = {
+      format: "mp3",
+      channels: "dual",
+      play_beep: true,
+      max_length: 0,
+      timeout_secs: 0,
+      transcription: true,
+      transcription_engine: "B",
+      transcription_language: "en-US"
+    };
+
+    try {
+      // Use firstValueFrom to convert the observable to a promise.
+      const response = await firstValueFrom(
+        this.http.post(`${this.backendApi}/calls/${callControlId}/actions/record_start`, requestBody)
+      );
+      console.log("Recording started successfully:", response);
+    } catch (error) {
+      console.error("Error starting call recording:", error);
+      throw error;
+    }
+  }
+
+  private handleWebSocketMessage(res: any) {
+    if (res?.data?.payload) {
+      const { event_type, payload } = res.data;
+      if (event_type === 'call.answered') {
+        this.startCallRecording(payload.call_control_id);
+      }
+    }
   }
 }
