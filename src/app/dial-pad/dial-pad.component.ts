@@ -1,195 +1,196 @@
-import { Component } from '@angular/core';
-import { CallService } from '../services/call.service';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { CalltelnyxService } from '../services/telnyx/calltelnyx.service';
-import { config } from '../../config';
+import { TelnyxService } from '../services/telnyx/telnyx.service';
+import { ProfileService } from '../services/profile.service';
+import { CallService } from '../services/call.service';
+import { WebRTCService } from '../services/web-rtc/web-rtc.service';
 
 @Component({
   selector: 'app-dial-pad',
+  standalone: true,
   imports: [FormsModule, CommonModule],
   templateUrl: './dial-pad.component.html',
   styleUrls: ['./dial-pad.component.css']
 })
-export class DialPadComponent {
+export class DialPadComponent implements OnInit {
   dialedNumber: string = '';
-    callStatus: string = 'idle'; 
-    isMuted: boolean = false;
-    isOnHold: boolean = false;
-    from: string = '';
-    profiles: any[] = [];
-    phoneNumbers: any[] = [];
-    isRinging: boolean = false;
-    isCallStatus: boolean = false;
-    callDuration: string = '00:00';
-    calldiscountstatus: any[] = ['hangup','destroy'];
-    private timerInterval: any;
-  
-    selectedProfile = {
-      id: '',
-      profileName: '',
-      webhook_event_url: '',
-      username: '',
-      password: '',
-    };
-  
-    log = "";
+  from: string = '';
+  profiles: any[] = [];
+  phoneNumbers: any[] = [];
+  balance: number = 0;
+  currency: string = 'USD';
+  isCallStatus: boolean = false;
+  private timerInterval: any;
+  callDuration: string = '00:00';
 
-    private beepSound = new Audio('assets/beep.wav');
-    private callbeepSound = new Audio('assets/callbeep.mp3');
-  
-    constructor(private calltelnyxService: CalltelnyxService,
-        private callService: CallService) {
-          this.callbeepSound.loop = true;
-        }
-  
-    async ngOnInit() {
-      // Load profiles from backend
-      this.callService.callProfiles().subscribe(
-        (data) => {
-          this.profiles = data.data;
+  selectedProfile = {
+    id: '',
+    profileName: '',
+    webhook_event_url: '',
+    username: '',
+    password: '',
+  };
+
+  @ViewChild('remoteAudio') remoteAudio!: ElementRef<HTMLAudioElement>;
+
+  private callbeepSound = new Audio('assets/callbeep.mp3');
+  private beepSound = new Audio('assets/beep.wav');
+
+  constructor(
+    private telnyxservice: TelnyxService,
+    private profileService: ProfileService,
+    private callService: CallService,
+    private webRTCService: WebRTCService,
+  ) {}
+
+  async ngOnInit() {
+    this.callService.call_control_applicationsProfiles().subscribe(
+      (data: any) => {
+        this.profiles = data.data;
+        if (this.profiles.length > 0) {
           this.selectedProfile.id = this.profiles[0].id;
           this.onProfileChange();
-          console.log('Messaging Profiles:', this.profiles);
-        },
-        (error) => {
-          console.error('Error fetching profiles', error);
         }
-      );
-      this.calltelnyxService.callStatus$.subscribe(status => {
-        this.callStatus = status;
-       
-        if(this.calldiscountstatus.find(a=>a == this.callStatus)){
-          this.pauseCallBeep();
-          this.closeModal();
-          this.callbeepSound.pause();
-          this.callDuration = "00:00";
-        }
-
-        if(this.callStatus == 'active'){
-          this.pauseCallBeep();
-          this.callbeepSound.pause();
-          this.startCallTimer();
-        }
-        console.log("Status Initial", this.callStatus);
-      });
-    }
-  
-    async onProfileChange() {
-      try {
-        console.log(this.selectedProfile);
-        if (!this.selectedProfile.id) return;
-    
-        console.log(this.selectedProfile);
-        const selected = this.profiles.find(
-          (profile) => profile.id === this.selectedProfile.id
-        );
-    
-        if (selected) {
-          this.selectedProfile.profileName = selected.connection_name;
-          this.selectedProfile.username = selected.user_name;
-          this.selectedProfile.password = selected.password;
-    
-          console.log(this.selectedProfile);
-    
-          // ✅ Correct usage of async/await
-          const response = await this.callService.getProfilesAssociatedPhonenumbers(this.selectedProfile.id).toPromise();
-          this.phoneNumbers = response?.data || [];
-    
-          if (this.phoneNumbers.length > 0) {
-            this.from = this.phoneNumbers[0].phone_number;
-            console.log("Initial call");
-            this.initializeTelnyxCredentials(
-              this.selectedProfile.username,
-              this.selectedProfile.password,
-              config.apiKey
-            );
-          } else {
-            this.from = '';
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching associated phone numbers', error);
+      },
+      (error: any) => {
+        console.error('Error fetching profiles', error);
       }
-    }
-    
-    appendDigit(digit: string) {
-      this.dialedNumber += digit;
-      this.beepSound.currentTime = 0;  // Restart sound
-      this.beepSound.play();
-    }
+    );
 
-    dialedNumbervalue(){
-      this.beepSound.currentTime = 0;  // Restart sound
-      this.beepSound.play();
-    }
-  
-    deleteLastDigit() {
-      this.dialedNumber = this.dialedNumber.slice(0, -1);
-      this.beepSound.currentTime = 0;  // Restart sound
-      this.beepSound.play();
-    }
-  
-  
-  
-    initializeTelnyxCredentials(login: string, password: string, login_token: string) {
-      this.calltelnyxService.setCredentials(login, password, login_token);
-      this.calltelnyxService.initializeClient();
-      this.connect();
-      this.callStatus = "Connecting...";
-    }
-  
-    connect() {
-      this.log = "Connecting...";
-      this.calltelnyxService.connect();
-    }
-  
-    call() {
-      if (this.dialedNumber) {
+    this.telnyxservice.callStatus$.subscribe(status => {
+      if (status.status === 'Call Answered' && status.type === "success") {
         this.isCallStatus = true;
-        this.callbeepSound.currentTime = 0;
-        this.callbeepSound.play();
-        this.calltelnyxService.call(this.dialedNumber, this.from);
+        this.startCallTimer();
+        this.showToast(status.status, status.type);
       }
-    }
-  
-    hangup() {
-      this.callbeepSound.play();
-      this.isCallStatus = false;
-      this.calltelnyxService.hangup();
-      clearInterval(this.timerInterval);
-      this.callDuration = '00:00';
-      this.callStatus = 'idle';
-      this.beepSound.currentTime = 0;  // Restart sound
-      console.log('Call ended');
-      this.pauseCallBeep();
-      this.closeModal();
+
+      if (status.status && ['Hanging Up', 'Call Failed', 'Call Ended'].includes(status.status)) {
+        this.isCallStatus = false;
+        this.hangup();
+        this.showToast(status.status, status.type);
+      }
+    });
+
+    await this.webRTCService.initializeLocalStream();
+    this.webRTCService.setRemoteStreamHandler((stream: MediaStream) => {
+      if (this.remoteAudio?.nativeElement) {
+        this.remoteAudio.nativeElement.srcObject = stream;
+        this.remoteAudio.nativeElement.autoplay = true;
+        this.remoteAudio.nativeElement.muted = false;
+        this.remoteAudio.nativeElement.play().catch(err => {
+          console.error("❌ Playback error:", err);
+        });
+      } else {
+        console.error("❌ remoteAudio element is not defined!");
+      }
+    });
+  }
+
+  async call() {
+    if (!this.from || !this.dialedNumber) {
+      alert('Please enter a valid number.');
+      return;
     }
 
-    answerCall(){
-      this.beepSound.currentTime = 0;  // Restart sound
-      this.beepSound.play();
-    }
+    try {
+      this.isCallStatus = true;
+      await this.telnyxservice.makeCall(
+        this.dialedNumber,
+        this.from,
+        this.selectedProfile.id,
+        null,
+        true
+      );
 
-    startCallTimer() {
-      let seconds = 0;
-      clearInterval(this.timerInterval);
-      this.timerInterval = setInterval(() => {
-        seconds++;
-        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const secs = (seconds % 60).toString().padStart(2, '0');
-        this.callDuration = `${mins}:${secs}`;
-      }, 1000);
-    }
+      const offer = await this.webRTCService.createOffer();
+      console.log('WebRTC Offer:', offer);
 
-    closeModal() {
-      this.callbeepSound.play();
-      this.isCallStatus = false;
-      this.pauseCallBeep();
+      this.fetchBalance();
+    } catch (error) {
+      this.hangup();
+      this.showToast('Error starting call', 'error');
+      console.error('Error:', error);
     }
+  }
 
-    pauseCallBeep() {
-      this.callbeepSound.pause();
-      this.callbeepSound.currentTime = 0;
+  fetchBalance() {
+    this.profileService.getProfileBalance().subscribe(
+      (data) => {
+        this.balance = parseFloat(data.data.balance);
+        this.currency = data.data.currency;
+      },
+      (error) => console.error('Error fetching balance', error)
+    );
+  }
+
+  async onProfileChange() {
+    try {
+      if (!this.selectedProfile.id) return;
+      const selected = this.profiles.find(profile => profile.id === this.selectedProfile.id);
+      if (selected) {
+        this.selectedProfile.profileName = selected.connection_name;
+        this.selectedProfile.username = selected.user_name;
+        this.selectedProfile.password = selected.password;
+        const response = await this.callService.getProfilesAssociatedPhonenumbers(this.selectedProfile.id).toPromise();
+        this.phoneNumbers = response?.data || [];
+        this.from = this.phoneNumbers.length > 0 ? this.phoneNumbers[0].phone_number : '';
+      }
+    } catch (error) {
+      console.error('Error fetching associated phone numbers', error);
     }
+  }
+
+  hangup() {
+    this.isCallStatus = false;
+    clearInterval(this.timerInterval);
+    this.webRTCService.closeConnection();
+    this.callDuration = '00:00';
+    this.callbeepSound.play();
+  }
+
+  startCallTimer() {
+    let seconds = 0;
+    clearInterval(this.timerInterval);
+    this.timerInterval = setInterval(() => {
+      seconds++;
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = (seconds % 60).toString().padStart(2, '0');
+      this.callDuration = `${mins}:${secs}`;
+    }, 1000);
+  }
+
+  closeModal() {
+    this.callbeepSound.play();
+    this.isCallStatus = false;
+  }
+
+  deleteLastDigit() {
+    this.dialedNumber = this.dialedNumber.slice(0, -1);
+    this.beepSound.currentTime = 0;
+    this.beepSound.play();
+  }
+
+  appendDigit(digit: string) {
+    this.dialedNumber += digit;
+    this.beepSound.currentTime = 0;
+    this.beepSound.play();
+  }
+
+  dialedNumbervalue() {
+    this.beepSound.currentTime = 0;
+    this.beepSound.play();
+  }
+
+  showToast(message: string, type: 'info' | 'success' | 'error' | '') {
+    if (type !== '') {
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-4 right-4 p-3 rounded-lg shadow-lg text-white ${
+        type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+      }`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => document.body.removeChild(toast), 3000);
+    }
+  }
 }

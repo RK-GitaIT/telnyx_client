@@ -17,8 +17,8 @@ export class TelnyxService {
   private websocketUrl = 'https://gitait.com/telnyx/api/webhook';
   private webws = 'wss://gitait.com/telnyx/ws';
   private backendApi = config.apiUrl;
+  message: string | null  = '';
 
-  message: string = '';
   callStatus$ = new BehaviorSubject<CallStatus>({ status: '', type: '' });
 
   constructor(
@@ -29,40 +29,75 @@ export class TelnyxService {
     this.websocketService.message$.subscribe((res: any) => this.handleWebSocketMessage(res));
   }
 
-  async makeCall(destinationNumber: string, callerNumber: string, connectionId: string, message: string) {
+  async makeCall(destinationNumber: string, callerNumber: string, connectionId: string, message: string | null, isIvr: boolean) {
     try {
-      console.log(`Calling ${destinationNumber} from ${callerNumber} (Connection ID: ${connectionId})`);
+        console.log(`📞 Calling ${destinationNumber} from ${callerNumber} (Connection ID: ${connectionId})`);
 
-      const profileDetails = await this.callService.getProfilesAssociatedPhonenumbers(connectionId).toPromise();
-      if (!profileDetails?.data) throw new Error('Invalid profile details');
+        const profileDetails = await this.callService.getProfilesAssociatedPhonenumbers(connectionId).toPromise();
+        if (!profileDetails?.data) throw new Error('❌ Invalid profile details');
 
-      if (!this.websocketService.isConnected()) this.websocketService.connect(this.webws);
-      this.message = message;
+        if (!this.websocketService.isConnected()) {
+            console.log("🔗 Connecting to WebSocket...");
+            this.websocketService.connect(this.webws);
+        }
 
-      const payload = {
-        to: destinationNumber,
-        from: callerNumber,
-        from_display_name: "Gita IT",
-        connection_id: connectionId,
-        webhook_url: this.websocketUrl,
-        stream_track: "both_tracks",
-        send_silence_when_idle: true,
-        sip_auth_username: profileDetails.data.user_name,
-        sip_auth_password: profileDetails.data.password
-      };
+        this.message = message;
 
-      this.callStatus$.next({ status: 'Call Initiated', type: 'success' });
+        let payload: any = {
+            to: destinationNumber,
+            from: callerNumber,
+            from_display_name: "Gita IT",
+            connection_id: connectionId,
+            webhook_url: this.websocketUrl,
 
-      const response: any = await this.http.post(`${this.backendApi}/calls`, payload).toPromise();
-      if (response?.data?.call_control_id) {
-        console.log("Call Control ID:", response.data.call_control_id);
-      } else {
-        throw new Error("Call control ID missing in response");
-      }
+            // ✅ Enable WebRTC audio streaming
+            stream_track: "both_tracks",  // Both inbound and outbound audio
+            stream_url: "https://9bccfa7d-d274-4959-a8d9-3f291234fb15-00-2spvmgf4sg5r2.sisko.replit.dev/api/webhook",
+            send_silence_when_idle: true, // Avoid call drops when no speech detected
+
+            // ✅ Preferred codecs for WebRTC
+            media_type: "audio",
+            media_format: "opus",
+            transport_protocol: "udp", // Ensure WebRTC RTP over UDP
+            encryption: "srtp", // Secure RTP (if required)
+
+            // ✅ SIP Authentication
+            sip_auth_username: profileDetails.data.user_name,
+            sip_auth_password: profileDetails.data.password,
+
+            // ✅ Call Time Limits
+            timeout_secs: 60, // Wait for 60 seconds before timeout
+            time_limit_secs: 3600, // Max call duration = 1 hour
+        };
+
+        // ✅ Add recording options if it's NOT an IVR call
+        if (!isIvr) {
+            payload = {
+                ...payload,
+                record: "record-from-answer",
+                record_format: "mp3",
+                record_channels: "dual"
+            };
+        }
+
+        this.callStatus$.next({ status: 'Call Initiated', type: 'success' });
+
+        // ✅ Fix API Call Handling
+        const response: any = await this.http.post(`${this.backendApi}/calls`, payload).toPromise();
+        console.log("✅ API Response:", response);
+
+        if (response?.data?.call_control_id) {
+            console.log("✅ Call Control ID:", response.data.call_control_id);
+        } else {
+            throw new Error("❌ Call control ID missing in response");
+        }
     } catch (error: any) {
-      this.handleCallError(error);
+        console.error("❌ API Call Failed:", error);
+        this.handleCallError(error);
     }
-  }
+}
+
+  
 
   private handleWebSocketMessage(res: any) {
     if (res?.data?.payload) {
@@ -71,7 +106,9 @@ export class TelnyxService {
 
       if (event_type === 'call.answered') {
         this.callStatus$.next({ status: 'Call Answered', type: 'success' });
-        this.playTTS(payload.call_control_id, this.message);
+        if(this.message != null){
+          this.playTTS(payload.call_control_id, this.message);
+        }
       }
 
       if (event_type === 'call.speak.ended') {
