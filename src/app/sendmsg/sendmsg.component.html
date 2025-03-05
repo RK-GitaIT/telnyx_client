@@ -4,9 +4,6 @@
       <span class="font-semibold text-base md:text-lg tracking-wide">
         ✉️ New Message
       </span>
-      <span class="mt-2 md:mt-0 text-sm md:text-base">
-        Note: SMS will only be sent to USA numbers. $0.004 per SMS
-      </span>
     </div>
   
     <!-- Input Fields -->
@@ -33,10 +30,13 @@
       <textarea [(ngModel)]="message"
         class="w-full p-2 md:p-3 h-32 md:h-40 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
         placeholder="Compose your message..."></textarea>
+      <span class="text-sm md:text-base text-blue-600">
+          Note: SMS will only be sent to USA numbers. $0.004 per SMS
+      </span>
     </div>
   
     <!-- Footer -->
-    <div class="flex justify-center items-center bg-gray-100 p-3 rounded-b-lg">
+    <div class="flex justify-center items-center p-3 rounded-b-lg">
       <button (click)="sendMessage()"
         style="background-color: #1e3a8a;"
         class="text-white px-4 py-2 rounded hover:bg-blue-600 transition w-full md:w-auto text-sm md:text-base">

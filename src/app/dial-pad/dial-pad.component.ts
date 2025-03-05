@@ -1,19 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Pipe } from '@angular/core';
 import { CallService } from '../services/call.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { CalltelnyxService } from '../services/telnyx/calltelnyx.service';
 import { config } from '../../config';
 import { Subscription } from 'rxjs';
+import { PhonePipe } from '../PhonePipe';
 
 @Component({
   selector: 'app-dial-pad',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, PhonePipe],
   templateUrl: './dial-pad.component.html',
   styleUrls: ['./dial-pad.component.css']
 })
 export class DialPadComponent implements OnInit {
-  dialedNumber: string = '';
+  dialedNumber: string = '+';
   callStatus: string = 'idle';
   isMuted: boolean = false;
   isOnHold: boolean = false;
@@ -207,4 +208,5 @@ export class DialPadComponent implements OnInit {
     this.callbeepSound.pause();
     this.callbeepSound.currentTime = 0;
   }
+
 }

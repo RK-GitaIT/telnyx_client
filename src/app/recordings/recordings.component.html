@@ -1,65 +1,66 @@
-<div class="min-h-screen p-4 bg-gray-100">
-    <!-- Recordings Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div *ngFor="let recording of recordings" class="bg-white rounded-xl shadow-md overflow-hidden transform hover:scale-105 transition duration-300">
-        <!-- Cover Art -->
-        <div class="relative">
-          <div *ngIf="currentPlayingRecordingId === recording.id" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <i class="fa fa-pause text-white text-3xl animate-pulse"></i>
-          </div>
-        </div>
-        <!-- Details -->
-        <div class="p-4">
-           <h2 class="text-lg font-semibold text-gray-800 mb-1 truncate">Call Recording</h2>
-           <p class="text-xs text-gray-500 mb-2">{{ recording.created_at | date:'short' }}</p>
-           <div class="mb-2">
-             <span class="text-sm text-gray-700 font-medium">From:</span>
-             <span class="text-sm text-gray-700">{{ recording.from }}</span>
-           </div>
-           <div class="mb-2">
-             <span class="text-sm text-gray-700 font-medium">To:</span>
-             <span class="text-sm text-gray-700">{{ recording.to }}</span>
-           </div>
-           <div class="mb-4">
-             <span class="text-sm text-gray-700 font-medium">Duration:</span>
-             <span class="text-sm text-gray-700">{{ recording.duration_millis }} ms</span>
-           </div>
-           <!-- Audio Progress Bar -->
-           <div *ngIf="currentPlayingRecordingId === recording.id" class="w-full bg-gray-200 rounded-full h-1 mb-4">
-             <div class="bg-blue-500 h-1 rounded-full" [style.width.%]="audioProgress"></div>
-           </div>
-           <!-- Audio Control Buttons -->
-           <div class="flex space-x-2">
-              <button (click)="togglePlayback(recording)" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-xs flex items-center justify-center">
-                 <ng-container *ngIf="currentPlayingRecordingId === recording.id; else playIcon">
-                    <i class="fa fa-pause mr-1"></i> Pause
-                 </ng-container>
-                 <ng-template #playIcon>
-                    <i class="fa fa-play mr-1"></i> Play
-                 </ng-template>
-              </button>
-              <button (click)="downloadRecording(recording)" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded text-xs flex items-center justify-center">
-                 <i class="fa fa-download mr-1"></i> Download
-              </button>
-              <button (click)="deleteRecording(recording)" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded text-xs flex items-center justify-center">
-                 <i class="fa fa-trash mr-1"></i> Delete
-              </button>
-           </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Pagination Controls -->
+<div class="min-h-screen p-6 bg-gray-100">
+  <div class="bg-white p-6 rounded-lg shadow-lg">
+    <table class="min-w-full border-collapse rounded-lg overflow-hidden shadow">
+      <!-- Header -->
+      <thead>
+        <tr class="text-white text-center bg-gradient-to-b from-blue-700 to-blue-500">
+          <!-- <th class="px-6 py-4 text-sm font-medium">#</th> -->
+          <th class="px-6 py-4 text-sm font-medium"><i class="fa fa-calendar-alt"></i> Date</th>
+          <th class="px-6 py-4 text-sm font-medium"><i class="fa fa-phone"></i> From</th>
+          <th class="px-6 py-4 text-sm font-medium"><i class="fa fa-phone"></i> To</th>
+          <th class="px-6 py-4 text-sm font-medium"><i class="fa fa-clock"></i> Time</th>
+          <th class="px-6 py-4 text-sm font-medium"><i class="fa fa-hourglass-half"></i> Duration</th>
+          <th class="px-6 py-4 text-sm font-medium"><i class="fa fa-microphone"></i> Recording</th>
+          <th class="px-6 py-4 text-sm font-medium"><i class="fa fa-trash"></i> Delete</th>
+        </tr>
+      </thead>
+
+      <!-- Body -->
+      <tbody>
+        <tr *ngFor="let recording of recordings; let i = index" class="text-gray-800 text-center hover:bg-gray-200 transition">
+          <!-- <td class="px-6 py-4 border-b">{{ (currentPage - 1) * pageSize + i + 1 }}</td> -->
+          <td class="px-6 py-4 border-b">{{ recording.created_at | date:'MMM d, yyyy' }}</td>
+          <td class="px-6 py-4 border-b">{{ recording.from | phone }}</td>
+          <td class="px-6 py-4 border-b">{{ recording.to | phone }}</td>
+          <td class="px-6 py-4 border-b">{{ recording.created_at | date:'hh:mm:ss a' }}</td>
+          <td class="px-6 py-4 border-b">{{ formatDuration(recording.duration_millis) }}</td>
+
+          <!-- Play/Pause -->
+          <td class="px-6 py-4 border-b">
+            <button (click)="togglePlayback(recording)" class="bg-blue-400 hover:bg-blue-500 text-white py-2 px-4 rounded shadow-md transition">
+              <i *ngIf="currentPlayingRecordingId === recording.id; else playIcon" class="fa fa-pause"></i>
+              <ng-template #playIcon><i class="fa fa-play"></i></ng-template>
+            </button>
+            <div *ngIf="currentPlayingRecordingId === recording.id" class="w-full bg-gray-300 rounded-full h-2 mt-2">
+              <div class="bg-blue-500 h-2 rounded-full" [style.width.%]="audioProgress"></div>
+            </div>
+          </td>
+
+          <!-- Delete -->
+          <td class="px-6 py-4 border-b">
+            <button (click)="deleteRecording(recording)" class="bg-red-400 hover:bg-red-500 text-white py-2 px-4 rounded shadow-md transition">
+              <i class="fa fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
     <div class="flex justify-center items-center mt-8 space-x-4">
-      <button (click)="prevPage()" [disabled]="!meta || currentPage <= 1" class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded disabled:opacity-50 transition duration-300">
-        Previous
+      <button (click)="prevPage()" [disabled]="!meta || currentPage <= 1"
+        class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-5 rounded disabled:opacity-50 shadow-md transition">
+        <i class="fa fa-chevron-left"></i> Previous
       </button>
-      <span class="text-gray-800 text-sm font-medium">
+
+      <span class="text-gray-900 text-sm font-medium">
         Page {{ currentPage }} of {{ meta?.total_pages }}
       </span>
-      <button (click)="nextPage()" [disabled]="!meta || currentPage >= meta.total_pages" class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded disabled:opacity-50 transition duration-300">
-        Next
+
+      <button (click)="nextPage()" [disabled]="!meta || currentPage >= meta.total_pages"
+        class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-5 rounded disabled:opacity-50 shadow-md transition">
+        Next <i class="fa fa-chevron-right"></i>
       </button>
     </div>
   </div>
-  
+</div>

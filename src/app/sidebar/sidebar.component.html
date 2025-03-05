@@ -1,5 +1,4 @@
 <div class="w-80 h-screen bg-gradient-to-b from-blue-900 to-blue-700 text-white p-6 space-y-10 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-transparent">
-  <!-- 💰 Balance Section with Glow Effect -->
   <div class="relative flex flex-col items-start space-y-3 bg-gradient-to-r from-blue-800 to-blue-500 p-5 rounded-xl shadow-xl overflow-hidden">
     <div class="absolute inset-0 bg-white opacity-10 rounded-xl blur-lg"></div>
     <span class="text-xl font-extrabold flex items-center gap-3 relative">
@@ -12,7 +11,6 @@
     </span>
   </div>
 
-  <!-- 🌐 Navigation Menu -->
   <nav>
     <ul class="space-y-4">
       <li>
@@ -29,22 +27,16 @@
       </li>
       <li>
         <a [routerLink]="['/ivr']" class="flex items-center gap-4 p-4 rounded-xl bg-white bg-opacity-10 backdrop-blur-lg transition-all duration-300 cursor-pointer shadow-md hover:scale-105 hover:shadow-xl hover:bg-opacity-20">
-          <i class="fas fa-folder text-xl text-orange-300"></i>
+          <i class="fas fa-voicemail text-xl text-orange-300"></i>
           <span class="text-base font-semibold tracking-wide">IVR</span>
         </a>
       </li>
       <li>
         <a [routerLink]="['/recordings']" class="flex items-center gap-4 p-4 rounded-xl bg-white bg-opacity-10 backdrop-blur-lg transition-all duration-300 cursor-pointer shadow-md hover:scale-105 hover:shadow-xl hover:bg-opacity-20">
-          <i class="fas fa-music text-xl text-orange-300"></i>
+          <i class="fas fa-microphone text-xl text-orange-300"></i>
           <span class="text-base font-semibold tracking-wide">Recordings</span>
         </a>
       </li>      
-      <li>
-        <a [routerLink]="['/contacts']" class="flex items-center gap-4 p-4 rounded-xl bg-white bg-opacity-10 backdrop-blur-lg transition-all duration-300 cursor-pointer shadow-md hover:scale-105 hover:shadow-xl hover:bg-opacity-20">
-          <i class="fas fa-address-book text-xl text-purple-300"></i>
-          <span class="text-base font-semibold tracking-wide">Contacts</span>
-        </a>
-      </li>
       <li>
         <a [routerLink]="['/settings']" class="flex items-center gap-4 p-4 rounded-xl bg-white bg-opacity-10 backdrop-blur-lg transition-all duration-300 cursor-pointer shadow-md hover:scale-105 hover:shadow-xl hover:bg-opacity-20">
           <i class="fas fa-cog text-xl text-gray-300"></i>

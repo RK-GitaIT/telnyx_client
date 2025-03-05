@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { PhonePipe } from '../PhonePipe';
 
 interface Recording {
   connection_id: string;
@@ -35,7 +36,7 @@ interface PaginationMeta {
 
 @Component({
   selector: 'app-recordings',
-  imports: [CommonModule],
+  imports: [CommonModule, PhonePipe],
   templateUrl: './recordings.component.html',
   styleUrls: ['./recordings.component.css']
 })
@@ -43,8 +44,7 @@ export class RecordingsComponent implements OnInit {
   recordings: Recording[] = [];
   meta: PaginationMeta | null = null;
   currentPage: number = 1;
-  pageSize: number = 9;
-  token: string = 'your_api_token_here';
+  pageSize: number = 10;
 
   // Audio controller: only one audio can play at a time.
   currentAudio: HTMLAudioElement | null = null;
@@ -125,12 +125,7 @@ export class RecordingsComponent implements OnInit {
     const confirmDelete = confirm('Are you sure you want to delete this recording?');
     if (!confirmDelete) return;
     const url = `https://api.telnyx.com/v2/recordings/${recording.id}`;
-    this.http.delete(url, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${this.token}`
-      }
-    }).subscribe(() => {
+    this.http.delete(url).subscribe(() => {
       if (this.currentPlayingRecordingId === recording.id && this.currentAudio) {
         this.currentAudio.pause();
         this.currentAudio = null;
@@ -142,4 +137,16 @@ export class RecordingsComponent implements OnInit {
       console.error('Error deleting recording', error);
     });
   }
+  
+  formatDuration(durationMillis: number): string {
+    const totalSeconds = Math.floor(durationMillis / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+  
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+  }
+  
 }
