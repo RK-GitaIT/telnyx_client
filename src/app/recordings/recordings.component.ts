@@ -44,7 +44,7 @@ export class RecordingsComponent implements OnInit {
   recordings: Recording[] = [];
   meta: PaginationMeta | null = null;
   currentPage: number = 1;
-  pageSize: number = 10;
+  pageSize: number = 15;
 
   // Audio controller: only one audio can play at a time.
   currentAudio: HTMLAudioElement | null = null;
