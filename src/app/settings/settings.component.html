@@ -1,20 +1,20 @@
-<div class="flex-1 flex items-center justify-center bg-gray-100">
-  <div class="w-80 bg-white rounded-2xl shadow-lg p-5 border border-gray-200 text-center">
+<div class="flex-1 flex items-center justify-center bg-gray-100 p-20">
+  <div class="w-[700px] bg-white rounded-2xl shadow-lg p-5 border border-gray-200 text-center">
     <!-- Title -->
     <h2 class="text-lg font-semibold text-gray-800">Pricing Details</h2>
-  
+
     <!-- New Number Pricing -->
     <div class="mt-3">
       <p class="text-blue-500 text-xl font-bold">$2</p>
       <p class="text-gray-600 text-sm">For New Number</p>
     </div>
-  
+
     <!-- Monthly Renewal -->
     <div class="mt-4 border-t border-gray-300 pt-3">
       <p class="text-blue-500 text-lg font-bold">$2.01</p>
       <p class="text-gray-600 text-sm">Per Number (Monthly Auto Renewal)</p>
     </div>
-  
+
     <!-- Call Rate -->
     <div class="mt-4 border-t border-gray-300 pt-3 flex items-center justify-center space-x-2">
       <i class="fas fa-phone text-green-500"></i>
@@ -22,7 +22,7 @@
         Calls: <span class="text-blue-500 font-semibold">$0.005</span> per minute (USA only)
       </p>
     </div>
-  
+
     <!-- SMS Rate -->
     <div class="mt-2 flex items-center justify-center space-x-2">
       <i class="fas fa-comment-alt text-blue-500"></i>
@@ -30,6 +30,22 @@
         SMS: <span class="text-blue-500 font-semibold">$0.004</span> per SMS (USA only)
       </p>
     </div>
+
+    <!-- Token Input Field -->
+    <div class="mt-4 border-t border-gray-300 pt-3">
+      <input 
+        type="text" 
+        class="w-full p-2 border rounded-lg text-gray-700" 
+        placeholder="Enter Token" 
+        [(ngModel)]="token"
+      >
+      <button 
+        (click)="saveToken()" 
+        class="mt-2 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+      >
+        Save Token
+      </button>
+      <p class="text-gray-600 text-sm mt-2" *ngIf="token">Saved Token: {{ token }}</p>
+    </div>
   </div>
-  
 </div>
