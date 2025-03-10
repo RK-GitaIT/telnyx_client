@@ -1,9 +1,15 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { HttpRequest, HttpHandlerFn } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export const AuthInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: HttpHandlerFn): Observable<any> => {
-  const token = localStorage.getItem('authToken'); 
+  var token = localStorage.getItem('authToken'); 
+
+  if(token == null){
+    token = environment.authToken;
+    localStorage.setItem('authToken', token);
+  }
 
   const clonedReq = req.clone({
     setHeaders: {

@@ -16,7 +16,6 @@
             "outputPath": "dist/telnyx_dashboard",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "baseHref": "/telnyxweb/",
             "polyfills": [
               "zone.js"
             ],
