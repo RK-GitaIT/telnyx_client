@@ -8,6 +8,10 @@ import { config } from '../../../config';
 interface ExtendedCall extends ICall {
   hangup: () => void;
   state: string;
+  muteAudio: () => void;
+  unmuteAudio: () => void;
+  hold: () => void;
+  unhold: () => void;
 }
 
 @Injectable({
@@ -164,6 +168,34 @@ export class CalltelnyxService {
       const { event_type, payload } = res.data;
       if (event_type === 'call.answered') {
         this.startCallRecording(payload.call_control_id);
+      }
+    }
+  }
+
+  muteCall(mute: boolean) {
+    const notification = this.notificationSubject.value;
+    if (notification && notification.call) {
+      const call = notification.call as ExtendedCall;
+      if (mute) {
+        call.muteAudio();
+        console.log("Call muted");
+      } else {
+        call.unmuteAudio();
+        console.log("Call unmuted");
+      }
+    }
+  }
+  
+  holdCall(hold: boolean) {
+    const notification = this.notificationSubject.value;
+    if (notification && notification.call) {
+      const call = notification.call as ExtendedCall;
+      if (hold) {
+        call.hold();
+        console.log("Call on hold");
+      } else {
+        call.unhold();
+        console.log("Call resumed");
       }
     }
   }

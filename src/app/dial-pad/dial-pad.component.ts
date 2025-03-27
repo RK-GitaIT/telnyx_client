@@ -209,4 +209,22 @@ export class DialPadComponent implements OnInit {
     this.callbeepSound.currentTime = 0;
   }
 
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    if (this.isMuted) {
+      this.calltelnyxService.muteCall(true);
+    } else {
+      this.calltelnyxService.muteCall(false);
+    }
+  }
+
+  toggleHold() {
+    this.isOnHold = !this.isOnHold;
+    if (this.isOnHold) {
+      this.calltelnyxService.holdCall(true);
+    } else {
+      this.calltelnyxService.holdCall(false);
+    }
+  }
+
 }

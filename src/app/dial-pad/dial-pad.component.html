@@ -61,30 +61,49 @@
     
 
     <!-- Modal Popup -->
-    <div *ngIf="isCallStatus" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="modal-animation bg-white rounded-2xl shadow-xl w-11/12 max-w-xs p-4 flex flex-col items-center space-y-4">
+    <div *ngIf="isCallStatus" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+      <div class="modal-animation bg-white rounded-2xl shadow-xl w-11/12 max-w-xs p-5 flex flex-col items-center space-y-4">
+        
         <!-- Modal Header -->
-        <div class="w-full flex justify-between items-center mb-3">
-          <h3 class="text-base font-semibold text-gray-700">Ongoing Call</h3>
-          <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        <div class="w-full flex justify-between items-center mb-3 border-b pb-2">
+          <h3 class="text-lg font-semibold text-gray-800">Ongoing Call</h3>
+          <button (click)="closeModal()" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
         </div>
-
+    
         <!-- Modal Content -->
         <div class="flex flex-col items-center space-y-2">
-          <p class="text-gray-600 text-lg font-medium">{{ dialedNumber }}</p>
-          <span class="bg-gray-200 px-3 py-1 rounded-full text-xs text-gray-700">{{ callDuration }}</span>
+          <p class="text-gray-700 text-lg font-semibold">{{ dialedNumber }}</p>
+          <span class="bg-gray-300 px-3 py-1 rounded-full text-xs text-gray-800 font-medium">{{ callDuration }}</span>
         </div>
-
+    
         <!-- Modal Footer (Call Controls) -->
-        <div class="flex space-x-4 mt-4">
-          <button (click)="hangup()" class="w-14 h-14 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600">
-            <div class="bg-white rounded-full p-1">
-              <img src="../../assets/end-call-icon.png" class="w-8 h-8" alt="End Call" />
-            </div>
+        <div class="flex space-x-6 mt-4">
+    
+          <!-- Mute/Unmute Button (Microphone) -->
+          <button (click)="toggleMute()" 
+                  [ngClass]="{'bg-gray-400': isMuted, 'bg-green-500': !isMuted}" 
+                  class="w-14 h-14 text-white rounded-full flex items-center justify-center shadow-md hover:bg-green-600 transition">
+            <i *ngIf="!isMuted" class="fas fa-microphone text-white text-2xl"></i>
+            <i *ngIf="isMuted" class="fas fa-microphone-slash text-white text-2xl"></i>
           </button>
+    
+          <!-- Hold/Resume Button -->
+          <button (click)="toggleHold()" 
+                  [ngClass]="{'bg-gray-400': isOnHold, 'bg-blue-500': !isOnHold}" 
+                  class="w-14 h-14 text-white rounded-full flex items-center justify-center shadow-md hover:bg-blue-600 transition">
+            <i *ngIf="!isOnHold" class="fas fa-pause text-white text-2xl"></i>
+            <i *ngIf="isOnHold" class="fas fa-play text-white text-2xl"></i>
+          </button>
+    
+          <!-- End Call Button -->
+          <button (click)="hangup()" class="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-700 transition">
+            <i class="fas fa-phone-slash text-white text-2xl"></i>
+          </button>
+    
         </div>
       </div>
     </div>
+    
   </div>
 </div>
 
